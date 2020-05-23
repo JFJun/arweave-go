@@ -170,7 +170,7 @@ func (t *TransactionV2) UnmarshalJSON(input []byte) error {
 		return err
 	}
 	t.id = id
-
+	t.format = txn.Format
 	t.lastTx = txn.LastTx
 
 	// gives me byte representation of the big num
@@ -216,6 +216,7 @@ func (t TransactionV2)formatMsg(acc ,data []byte)[]byte{
 // Format formats the TransactionV2s to a JSONTransactionV2 that can be sent out to an arweave node
 func (t *TransactionV2) formatV2() *transactionV2JSON {
 	return &transactionV2JSON{
+		Format:	   t.format,
 		ID:        utils.EncodeToBase64(t.id),
 		LastTx:    t.lastTx,
 		Owner:     utils.EncodeToBase64(t.owner.Bytes()),
