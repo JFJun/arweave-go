@@ -73,6 +73,14 @@ func (t *TransactionV2) ID() []byte {
 	return t.id
 }
 
+// write by jun
+func (t *TransactionV2) Txid() string {
+	if len(t.id) <= 0 {
+		return ""
+	}
+	return utils.EncodeToBase64(t.id)
+}
+
 // Hash returns the base64 RawURLEncoding of the TransactionV2 hash
 func (t *TransactionV2) Hash() string {
 	return utils.EncodeToBase64(t.id)
@@ -127,10 +135,10 @@ func (t *TransactionV2) Sign(w arweave_go.WalletSigner) (*TransactionV2, error) 
 	// format the message
 	msg, err := t.formatMsgBytes()
 	//fmt.Println(msg)
-	payload:=t.deepHash(msg)
+	payload := t.deepHash(msg)
 	//fmt.Println(payload)
 	//fmt.Println(len(payload))
-	data := arweaveHash(payload,SHA256)
+	data := arweaveHash(payload, SHA256)
 
 	sig, err := w.Sign(data[:])
 	//fmt.Println(sig)
@@ -204,19 +212,16 @@ func (t *TransactionV2) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func (t TransactionV2)formatMsg(acc ,data []byte)[]byte{
-	ft:=t.deepHashBytes(data)
-	acc = append(acc,ft...)
-	return arweaveHash(acc,Sha384)
+func (t TransactionV2) formatMsg(acc, data []byte) []byte {
+	ft := t.deepHashBytes(data)
+	acc = append(acc, ft...)
+	return arweaveHash(acc, Sha384)
 }
-
-
-
 
 // Format formats the TransactionV2s to a JSONTransactionV2 that can be sent out to an arweave node
 func (t *TransactionV2) formatV2() *transactionV2JSON {
 	return &transactionV2JSON{
-		Format:	   t.format,
+		Format:    t.format,
 		ID:        utils.EncodeToBase64(t.id),
 		LastTx:    t.lastTx,
 		Owner:     utils.EncodeToBase64(t.owner.Bytes()),
@@ -232,56 +237,56 @@ func (t *TransactionV2) formatV2() *transactionV2JSON {
 	}
 }
 
-
-func(t *TransactionV2)deepHashChunks(chunks []interface{},acc []byte)[]byte{
+func (t *TransactionV2) deepHashChunks(chunks []interface{}, acc []byte) []byte {
 	//fmt.Println("ACC=============>",acc)
-	if len(chunks)==0 {
+	if len(chunks) == 0 {
 		return acc
 	}
 	var newAcc []byte
-	if len(chunks)==0 {
+	if len(chunks) == 0 {
 		return acc
 	}
-	dh:=t.deepHash(chunks[0])
-	tmpAcc:=acc
-	tmpAcc = append(tmpAcc,dh...)
-	newAcc = arweaveHash(tmpAcc,Sha384)
+	dh := t.deepHash(chunks[0])
+	tmpAcc := acc
+	tmpAcc = append(tmpAcc, dh...)
+	newAcc = arweaveHash(tmpAcc, Sha384)
 	//fmt.Println("NewAcc<<<<<<<<<<<<<<<",newAcc)
-	if len(chunks)==1 {
+	if len(chunks) == 1 {
 		return newAcc
 	}
-	newChuck:=chunks[1:]
-	return t.deepHashChunks(newChuck,newAcc)
+	newChuck := chunks[1:]
+	return t.deepHashChunks(newChuck, newAcc)
 
 }
+
 //
-func (t *TransactionV2)deepHash(data interface{})[]byte{
-	d:=reflect.ValueOf(data)
+func (t *TransactionV2) deepHash(data interface{}) []byte {
+	d := reflect.ValueOf(data)
 	switch d.Kind() {
 	case reflect.Slice:
 		//fmt.Println(11111111)
-		len:=d.Len()
-		acc:=t.deepHashArray(len)
-		newData:=data.([]interface{})
-		return t.deepHashChunks(newData,acc)
+		len := d.Len()
+		acc := t.deepHashArray(len)
+		newData := data.([]interface{})
+		return t.deepHashChunks(newData, acc)
 	case reflect.Ptr:
 		//fmt.Println(222222222222)
-		bi:=data.(*big.Int)
-		dd:=bi.Bytes()
+		bi := data.(*big.Int)
+		dd := bi.Bytes()
 		//fmt.Println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",dd,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 		var (
-			tag []byte
+			tag    []byte
 			result []byte
 		)
-		list:=[]byte("blob")
-		len:=[]byte(fmt.Sprintf("%d",len(dd)))
-		tag = append(tag,list...)
-		tag = append(tag,len...)
-		h1:=arweaveHash(tag,Sha384)
-		h2:=arweaveHash(dd,Sha384)
-		result = append(result,h1...)
-		result = append(result,h2...)
-		return arweaveHash(result,Sha384)
+		list := []byte("blob")
+		len := []byte(fmt.Sprintf("%d", len(dd)))
+		tag = append(tag, list...)
+		tag = append(tag, len...)
+		h1 := arweaveHash(tag, Sha384)
+		h2 := arweaveHash(dd, Sha384)
+		result = append(result, h1...)
+		result = append(result, h2...)
+		return arweaveHash(result, Sha384)
 	default:
 		//fmt.Println("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 		return nil
@@ -289,26 +294,25 @@ func (t *TransactionV2)deepHash(data interface{})[]byte{
 
 }
 
-
-func (t *TransactionV2) encodeTagData() (tags []interface{}){
-	if t.tags==nil ||len(t.tags)==0  {
+func (t *TransactionV2) encodeTagData() (tags []interface{}) {
+	if t.tags == nil || len(t.tags) == 0 {
 		return tags
 	}
-	for _,tag:=range t.tags{
+	for _, tag := range t.tags {
 		var tmp []interface{}
-		name,_:=utils.DecodeString(tag.Name)
-		nBytes:=new(big.Int).SetBytes(name)
-		tmp = append(tmp,nBytes)
-		value,_:=utils.DecodeString(tag.Value)
-		vBytes:=new(big.Int).SetBytes(value)
-		tmp = append(tmp,vBytes)
+		name, _ := utils.DecodeString(tag.Name)
+		nBytes := new(big.Int).SetBytes(name)
+		tmp = append(tmp, nBytes)
+		value, _ := utils.DecodeString(tag.Value)
+		vBytes := new(big.Int).SetBytes(value)
+		tmp = append(tmp, vBytes)
 
-		tags = append(tags,tmp)
+		tags = append(tags, tmp)
 	}
 	return tags
 }
 
-func (t *TransactionV2) formatMsgBytes() ([]interface{},error) {
+func (t *TransactionV2) formatMsgBytes() ([]interface{}, error) {
 
 	format := new(big.Int).SetBytes(utils.StringToBuffer(fmt.Sprintf("%d", t.format)))
 
@@ -316,26 +320,26 @@ func (t *TransactionV2) formatMsgBytes() ([]interface{},error) {
 	if err != nil {
 		return nil, err
 	}
-	lastTx:= new(big.Int).SetBytes(lastTxBytes)
+	lastTx := new(big.Int).SetBytes(lastTxBytes)
 	targetBytes, err1 := utils.DecodeString(t.Target())
 	if err1 != nil {
-		return nil,err1
+		return nil, err1
 	}
-	target:=new(big.Int).SetBytes(targetBytes)
+	target := new(big.Int).SetBytes(targetBytes)
 	data_size := utils.StringToBuffer(t.dataSize)
-	ds:=new(big.Int).SetBytes(data_size)
-	quantity:=utils.StringToBuffer(t.quantity)
-	quan:=new(big.Int).SetBytes(quantity)
-	reward:=utils.StringToBuffer(t.reward)
-	rw:=new(big.Int).SetBytes(reward)
+	ds := new(big.Int).SetBytes(data_size)
+	quantity := utils.StringToBuffer(t.quantity)
+	quan := new(big.Int).SetBytes(quantity)
+	reward := utils.StringToBuffer(t.reward)
+	rw := new(big.Int).SetBytes(reward)
 	data_root_bytes, err2 := utils.DecodeString(t.dataRoot)
 	if err2 != nil {
-		return nil,err
+		return nil, err
 	}
-	data_root:=new(big.Int).SetBytes(data_root_bytes)
-	tags:=t.encodeTagData()
+	data_root := new(big.Int).SetBytes(data_root_bytes)
+	tags := t.encodeTagData()
 
-	msg:=[]interface{}{
+	msg := []interface{}{
 		format,
 		t.owner,
 		target,
@@ -346,56 +350,56 @@ func (t *TransactionV2) formatMsgBytes() ([]interface{},error) {
 		ds,
 		data_root,
 	}
-	return msg,nil
+	return msg, nil
 }
 
-const(
+const (
 	SHA256 = iota
 	Sha384
 )
-func arweaveHash(msg []byte,alg int)[]byte{
+
+func arweaveHash(msg []byte, alg int) []byte {
 	var data []byte
 	switch alg {
 	case 0:
 		d := sha256.Sum256(msg)
 		data = d[:]
 	case 1:
-		h:=sha512.New384()
+		h := sha512.New384()
 		h.Write(msg)
-		d:=h.Sum(nil)
+		d := h.Sum(nil)
 		data = d[:]
 	}
 	return data
 }
 
-
-func (t *TransactionV2)deepHashArray(length int)[]byte{
+func (t *TransactionV2) deepHashArray(length int) []byte {
 	var tag []byte
-	list:=[]byte("list")
+	list := []byte("list")
 
-	len:=[]byte(fmt.Sprintf("%d",length))
-	tag = append(tag,list...)
-	tag = append(tag,len...)
+	len := []byte(fmt.Sprintf("%d", length))
+	tag = append(tag, list...)
+	tag = append(tag, len...)
 
-	return arweaveHash(tag,Sha384)
+	return arweaveHash(tag, Sha384)
 }
-func (t *TransactionV2)deepHashBigInt(bi *big.Int)[]byte{
-	data:=bi.Bytes()
+func (t *TransactionV2) deepHashBigInt(bi *big.Int) []byte {
+	data := bi.Bytes()
 	return t.deepHashBytes(data)
 }
 
-func (t *TransactionV2)deepHashBytes(data []byte )[]byte{
+func (t *TransactionV2) deepHashBytes(data []byte) []byte {
 	var (
-		tag []byte
+		tag    []byte
 		result []byte
 	)
-	list:=[]byte("blob")
-	len:=[]byte(fmt.Sprintf("%d",len(data)))
-	tag = append(tag,list...)
-	tag = append(tag,len...)
-	h1:=arweaveHash(tag,Sha384)
-	h2:=arweaveHash(data,Sha384)
-	result = append(result,h1...)
-	result = append(result,h2...)
-	return arweaveHash(result,Sha384)
+	list := []byte("blob")
+	len := []byte(fmt.Sprintf("%d", len(data)))
+	tag = append(tag, list...)
+	tag = append(tag, len...)
+	h1 := arweaveHash(tag, Sha384)
+	h2 := arweaveHash(data, Sha384)
+	result = append(result, h1...)
+	result = append(result, h2...)
+	return arweaveHash(result, Sha384)
 }
