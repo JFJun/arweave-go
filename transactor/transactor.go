@@ -88,29 +88,29 @@ func (tr *Transactor) CreateTransaction(ctx context.Context, w arweave_go.Wallet
 }
 
 // CreateTransactionV2 creates a brand new transaction
-func (tr *Transactor) CreateTransactionV2(ctx context.Context, w arweave_go.WalletSigner, amount string, data []byte, target string) (*tx.TransactionV2, error) {
-	lastTx, err := tr.Client.LastTransaction(ctx, w.Address())
-	if err != nil {
-		return nil, err
-	}
-
-	price, err := tr.Client.GetReward(ctx, []byte(data))
-	if err != nil {
-		return nil, err
-	}
-
-	// Non encoded transaction fields
-	tx := tx.NewTransactionV2(
-		lastTx,
-		w.PubKeyModulus(),
-		amount,
-		target,
-		data,
-		price,
-	)
-
-	return tx, nil
-}
+//func (tr *Transactor) CreateTransactionV2(ctx context.Context, w arweave_go.WalletSigner, amount string, data []byte, target string) (*tx.TransactionV2, error) {
+//	lastTx, err := tr.Client.LastTransaction(ctx, w.Address())
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	price, err := tr.Client.GetReward(ctx, []byte(data))
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	// Non encoded transaction fields
+//	tx := tx.NewTransactionV2(
+//		lastTx,
+//		w.PubKeyModulus(),
+//		amount,
+//		target,
+//		data,
+//		price,
+//	)
+//
+//	return tx, nil
+//}
 
 // SendTransaction formats the transactions (base64url encodes the necessary fields)
 // marshalls the Json and sends it to the arweave network
@@ -124,6 +124,7 @@ func (tr *Transactor) SendTransaction(ctx context.Context, tx *tx.Transaction) (
 	}
 	return tr.Client.Commit(ctx, serialized)
 }
+
 // SendTransaction formats the transactions (base64url encodes the necessary fields)
 // marshalls the Json and sends it to the arweave network
 func (tr *Transactor) SendTransactionV2(ctx context.Context, tx *tx.TransactionV2) (string, error) {
@@ -136,7 +137,6 @@ func (tr *Transactor) SendTransactionV2(ctx context.Context, tx *tx.TransactionV
 	}
 	return tr.Client.Commit(ctx, serialized)
 }
-
 
 // WaitMined waits for the transaction to be mined
 func (tr *Transactor) WaitMined(ctx context.Context, tx *tx.Transaction) (*tx.Transaction, error) {

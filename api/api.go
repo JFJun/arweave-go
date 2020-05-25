@@ -142,6 +142,26 @@ func (c *Client) GetReward(ctx context.Context, data []byte) (string, error) {
 
 }
 
+/*
+write by jun 2020/5/25
+*/
+
+func (c *Client) GetRewardV2(ctx context.Context, data []byte, target string) (string, error) {
+	body, err := c.get(ctx, fmt.Sprintf("price/%d/%s", len(data), target))
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func (c *Client) GetTransactionAnchor(ctx context.Context) (string, error) {
+	body, err := c.get(ctx, fmt.Sprintf("tx_anchor"))
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
 // GetBalance requests the current balance of an address
 func (c *Client) GetBalance(ctx context.Context, address string) (string, error) {
 	body, err := c.get(ctx, fmt.Sprintf("wallet/%s/balance", address))
