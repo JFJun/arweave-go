@@ -218,7 +218,7 @@ func (t TransactionV2) formatMsg(acc, data []byte) []byte {
 	return arweaveHash(acc, Sha384)
 }
 
-// Format formats the TransactionV2s to a JSONTransactionV2 that can be sent out to an arweave node
+// Format formats the TransactionV2 to a JSONTransactionV2 that can be sent out to an arweave node
 func (t *TransactionV2) formatV2() *transactionV2JSON {
 	return &transactionV2JSON{
 		Format:    t.format,
@@ -238,19 +238,14 @@ func (t *TransactionV2) formatV2() *transactionV2JSON {
 }
 
 func (t *TransactionV2) deepHashChunks(chunks []interface{}, acc []byte) []byte {
-	//fmt.Println("ACC=============>",acc)
 	if len(chunks) == 0 {
 		return acc
 	}
 	var newAcc []byte
-	if len(chunks) == 0 {
-		return acc
-	}
 	dh := t.deepHash(chunks[0])
 	tmpAcc := acc
 	tmpAcc = append(tmpAcc, dh...)
 	newAcc = arweaveHash(tmpAcc, Sha384)
-	//fmt.Println("NewAcc<<<<<<<<<<<<<<<",newAcc)
 	if len(chunks) == 1 {
 		return newAcc
 	}
@@ -264,31 +259,14 @@ func (t *TransactionV2) deepHash(data interface{}) []byte {
 	d := reflect.ValueOf(data)
 	switch d.Kind() {
 	case reflect.Slice:
-		//fmt.Println(11111111)
 		len := d.Len()
 		acc := t.deepHashArray(len)
 		newData := data.([]interface{})
 		return t.deepHashChunks(newData, acc)
 	case reflect.Ptr:
-		//fmt.Println(222222222222)
 		bi := data.(*big.Int)
-		dd := bi.Bytes()
-		//fmt.Println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",dd,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-		var (
-			tag    []byte
-			result []byte
-		)
-		list := []byte("blob")
-		len := []byte(fmt.Sprintf("%d", len(dd)))
-		tag = append(tag, list...)
-		tag = append(tag, len...)
-		h1 := arweaveHash(tag, Sha384)
-		h2 := arweaveHash(dd, Sha384)
-		result = append(result, h1...)
-		result = append(result, h2...)
-		return arweaveHash(result, Sha384)
+		return t.deepHashBigInt(bi)
 	default:
-		//fmt.Println("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 		return nil
 	}
 
@@ -313,9 +291,7 @@ func (t *TransactionV2) encodeTagData() (tags []interface{}) {
 }
 
 func (t *TransactionV2) formatMsgBytes() ([]interface{}, error) {
-
 	format := new(big.Int).SetBytes(utils.StringToBuffer(fmt.Sprintf("%d", t.format)))
-
 	lastTxBytes, err := utils.DecodeString(t.LastTx())
 	if err != nil {
 		return nil, err
