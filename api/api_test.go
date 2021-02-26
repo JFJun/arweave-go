@@ -10,15 +10,16 @@ import (
 	"testing"
 )
 
-var client, _ = Dial("")
+var client, _ = Dial("http://54.238.245.19:1984")
 
 func TestClient_GetBlockByHeight(t *testing.T) {
-	block, err := client.GetBlockByHeight(context.Background(), 619969)
+	block, err := client.GetBlockByHeight(context.Background(), 633720)
 	if err != nil {
 		t.Fatal(err)
 	}
 	d, _ := json.Marshal(block)
 	fmt.Println(string(d))
+	fmt.Println(len(block.Txs))
 }
 
 func TestClient_GetTransaction(t *testing.T) {
